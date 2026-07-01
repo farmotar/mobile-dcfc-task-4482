@@ -390,8 +390,9 @@ def simulate_one_day(
 
         peak_grid_kw = max(peak_grid_kw, step_grid_kw)
 
-        # 4. Record SOC history
-        row_soc: dict = {"step_idx": ti, "time_utc": t.isoformat()}
+        # 4. Record SOC history (include grid draw so pipeline can compute energy cost)
+        row_soc: dict = {"step_idx": ti, "time_utc": t.isoformat(),
+                         "grid_kw": round(step_grid_kw, 2)}
         for k in range(n_units):
             row_soc[f"soc_unit_{k}"] = round(soc[k], 4)
         soc_history.append(row_soc)
