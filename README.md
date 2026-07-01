@@ -1,11 +1,13 @@
 # Mobile DCFC Sizing — Task 4482 (XOS Hub + Kempower)
 
-Analysis and sizing tools for two **mobile DC Fast Charger** technologies evaluated for Caltrans EV fleet maintenance stations. Unlike fixed chargers (see the companion repo), both systems can be deployed without permanent trenching or utility infrastructure upgrades.
+Analysis and sizing tools for two **mobile DC Fast Charger** technologies evaluated for Caltrans EV fleet maintenance stations. Unlike fixed chargers (see the companion repo), both systems avoid utility-side infrastructure — no trenching, no service-entrance upgrade from the utility.
 
 | Technology | Type | Grid required at site? | Sizing method |
 |---|---|---|---|
-| XOS Hub MC02 | Mobile battery trailer | No (charges at depot) | Time-series SoC simulation |
-| Kempower DGS | Portable grid-connected DCFC | Yes | Exact MILP |
+| XOS Hub MC02 | Mobile battery trailer | **Yes — building-side only** | Time-series SoC simulation |
+| Kempower DGS | Portable grid-connected DCFC | **Yes — building-side only** | Exact MILP |
+
+**Infrastructure scope for both technologies:** Costs include everything **after the utility meter** — panel/switchboard upgrades, breakers, conduit, wiring, and permits inside the maintenance building. Costs **do not** include anything before the meter (utility transformer upgrades, service-entrance work by the utility, or trenching from the utility connection point).
 
 Developed for the **Caltrans EV Fleet Electrification** study, Task 4482 quarterly report.
 
@@ -37,11 +39,11 @@ Key specs (from XOS User Manual, Section 5):
 - Grid input: 480 V 3-phase, 100 A (~83 kW at unity PF)
 - Battery chemistry: LFP (3,000 cycles at 70% DoD, 10-year life)
 
-Two deployment modes are modeled:
-- **Grid-connected (Scenario A):** Hub stays at the site and recharges from the local grid between vehicle visits. Analyzed with `xos_hub_soc_simulation.py`.
-- **Remote/mobile (Scenario B):** Hub arrives fully charged from Northgate depot, serves vehicles until SoC hits 25%, then returns to depot for a single bulk recharge. Analyzed with `xos_mobile_charging_analysis.py`.
+**Primary deployment model (Scenario A — grid-connected at site):** Each XOS unit is permanently stationed at the maintenance site and recharges its battery from the **local site grid** between vehicle visits. The site must provide a 480 V 3-phase, 100 A dedicated circuit per unit — all building-side electrical work (panel upgrade, breakers, conduit, wiring) is included in the cost model. Utility-side work (before the meter) is not included. This is the model used for all sizing recommendations and is implemented in `xos_hub_soc_simulation.py`.
 
-**Sizing rule:** Add XOS units one at a time until all vehicles are served on the target day (greedy add-one-until-covered). No MILP — this was decided in a UC Davis meeting on Jun 16, 2026.
+**Alternative model analyzed (Scenario B — remote/no-grid):** Hub is transported fully charged from the Northgate depot, serves vehicles at a remote site with no grid connection, and returns to the depot for a single bulk recharge. This scenario was explored in `xos_mobile_charging_analysis.py` but is not the primary design.
+
+**Sizing rule:** Add XOS units one at a time until all vehicles are served on the target day (greedy add-one-until-covered). No MILP — this was decided at a UC Davis meeting on Jun 16, 2026.
 
 ### Kempower DGS
 
@@ -299,8 +301,10 @@ Edit `charger_costs_xos_hub.py`. Key parameters:
 | Unit price | $245,437.50 | Caltrans informal quote |
 | O&M | $6,000/yr | Assumed (no published data) |
 | Life | 10 years | XOS User Manual, Section 5 |
-| Shared infra | tiered (see `electrical_infra_cost()`) | Building-side only |
-| Per-unit circuit cost | see `electrical_infra_cost()` | 480V/100A breaker + conduit + labor |
+| Shared infra (one-time) | tiered — see `electrical_infra_cost()` | Panel/switchboard upgrade, engineering, permits — **after meter only** |
+| Per-unit circuit cost | tiered — see `electrical_infra_cost()` | 480V/100A breaker + ~50 ft conduit + #2 AWG wire + 480V outlet + labor — **after meter only** |
+
+> **Infrastructure scope:** `electrical_infra_cost()` covers building-side electrical only. It does **not** include utility transformer upgrades, service-entrance work, or any work the utility performs before the meter.
 
 > **Note:** The O&M figure ($6,000/yr) is an estimate. Update it once Xos provides actual service contract pricing.
 
