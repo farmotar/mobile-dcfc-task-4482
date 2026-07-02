@@ -59,14 +59,15 @@ DAYS_PER_MON = 30.42
 INFRA_TIER   = "mid"         # building-side electrical estimate scenario
 
 SITES = [
-    ("northgate", "Northgate",  "SMUD"),
-    ("fresno",    "Fresno",     "PG&E BEV-2"),
-    ("glendale",  "Glendale",   "PG&E BEV-2 (proxy)"),
-    ("san_diego", "San Diego",  "SDG&E EV-HP"),
+    # (site_key, label, utility, csv_dir, csv_prefix)
+    ("northgate", "Northgate",  "SMUD",               BASE_DIR, "northgate"),
+    ("fresno",    "Fresno",     "PG&E BEV-2",         BASE_DIR, "fresno"),
+    ("glendale",  "Glendale",   "PG&E BEV-2 (proxy)", BASE_DIR, "glendale"),
+    ("san_diego", "San Diego",  "SDG&E EV-HP",        BASE_DIR, "san_diego"),
 ]
 
 WORST_N   = 10
-MAX_UNITS = 10    # maximum XOS units to try per day
+MAX_UNITS = 20    # maximum XOS units to try per day
 
 
 # ── Sizing: add-one-until-covered with plateau detection ───────────────────────
@@ -262,8 +263,8 @@ def build_schedule(events_df: pd.DataFrame, result: dict, date: str,
 
 # ── Main per-site run ──────────────────────────────────────────────────────────
 
-def run_site(site: str, label: str) -> pd.DataFrame:
-    csvs = sorted(BASE_DIR.glob(f"z2z_milp_events_{site}_*.csv"))
+def run_site(site: str, label: str, csv_dir: Path, csv_prefix: str) -> pd.DataFrame:
+    csvs = sorted(csv_dir.glob(f"z2z_milp_events_{csv_prefix}_*.csv"))
     print(f"\n{'='*62}")
     print(f"  {label}  ({site})  —  {len(csvs)} event files")
     print(f"{'='*62}")
@@ -365,8 +366,8 @@ site_all_dfs:   dict[str, pd.DataFrame] = {}
 site_sched_dfs: dict[str, pd.DataFrame] = {}
 summary_rows: list[dict] = []
 
-for site, label, utility in SITES:
-    df = run_site(site, label)
+for site, label, utility, csv_dir, csv_prefix in SITES:
+    df = run_site(site, label, csv_dir, csv_prefix)
     if df.empty:
         continue
 
@@ -413,9 +414,117 @@ LABEL = {
 
 with pd.ExcelWriter(OUT_DIR / "XOS_Sizing_Results.xlsx", engine="openpyxl") as xl:
     pd.DataFrame(summary_rows).to_excel(xl, sheet_name="Summary", index=False)
-    for site in [s for s, _, _ in SITES if s in site_all_dfs]:
+    for site in [s for s, *_ in SITES if s in site_all_dfs]:
         site_all_dfs[site].to_excel(xl, sheet_name=f"{LABEL[site]}_AllDays", index=False)
-    for site in [s for s, _, _ in SITES if s in site_sched_dfs]:
+    for site in [s for s, *_ in SITES if s in site_sched_dfs]:
         site_sched_dfs[site].to_excel(xl, sheet_name=f"{LABEL[site]}_Worst10Sched", index=False)
 
 print("Done.")
+
+# ── 10-Year Cost Report ───────────────────────────────────────────────────────
+print("\n" + "="*72)
+print("  10-YEAR LIFECYCLE COST REPORT — XOS Hub MC02")
+print("="*72)
+
+from charger_costs_xos_hub import XOS_HUB_SPECS, electrical_infra_cost
+
+PURCHASE   = XOS_HUB_SPECS["purchase_cost"]      # $245,437.50 / unit
+LIFE_YR    = XOS_HUB_SPECS["life_years"]          # 10 years
+ANN_MAINT  = XOS_HUB_SPECS["annual_maint"]        # $6,000 / unit / yr
+ANN_WARR   = XOS_HUB_SPECS.get("annual_warranty", 10_000)  # $10,000 / unit / yr
+DAYS_YR    = 365
+
+report_rows = []
+
+for site, label, utility, *_ in SITES:
+    if site not in site_all_dfs:
+        continue
+    df = site_all_dfs[site]
+
+    # Recommended units = max needed on worst-10 days
+    worst10 = df[df["is_worst10"]]
+    n       = int(worst10["n_xos_units"].max())
+
+    # Infrastructure (one-time, building-side mid estimate)
+    infra   = electrical_infra_cost(n, "mid")
+    infra_total   = infra["total"]
+    per_unit_inst = infra["per_unit_avg"]
+
+    # Average operational costs (over all analyzed days)
+    avg_energy = df["energy_cost"].mean()
+    avg_demand = (df["demand_cost"] + df["peak_win_cost"]).mean()
+    p90_daily  = df["total_daily_cost"].quantile(0.90)
+    avg_daily_total = df["total_daily_cost"].mean()
+
+    # Annual components
+    ann_hardware_amort = n * PURCHASE / LIFE_YR               # hardware amortized
+    ann_infra_amort    = infra_total / LIFE_YR                 # infra amortized
+    ann_maint          = n * ANN_MAINT                         # maintenance
+    ann_warr           = n * ANN_WARR                          # warranty/service
+    ann_energy         = avg_energy  * DAYS_YR
+    ann_demand         = avg_demand  * DAYS_YR
+    ann_total          = ann_hardware_amort + ann_infra_amort + ann_maint + ann_warr + ann_energy + ann_demand
+
+    # 10-year totals
+    capital_10yr = n * PURCHASE + infra_total               # one-time
+    om_10yr      = (ann_maint + ann_warr) * LIFE_YR         # maintenance + warranty
+    energy_10yr  = ann_energy * LIFE_YR
+    demand_10yr  = ann_demand * LIFE_YR
+    total_10yr   = capital_10yr + om_10yr + energy_10yr + demand_10yr
+
+    report_rows.append({
+        "Site":                   label,
+        "Utility":                utility,
+        "Recommended Units":      n,
+        "Infra Cost (one-time)":  round(infra_total, 0),
+        "Hardware Cost (one-time)": round(n * PURCHASE, 0),
+        "Total Capital (one-time)": round(capital_10yr, 0),
+        # Daily
+        "Avg Daily Energy $":     round(avg_energy, 2),
+        "Avg Daily Demand $":     round(avg_demand, 2),
+        "Daily O&M $":            round((ann_maint + ann_warr) / DAYS_YR * n, 2),
+        "Daily Capex Amort $":    round((ann_hardware_amort + ann_infra_amort) / DAYS_YR, 2),
+        "Avg Daily Total $":      round(avg_daily_total, 2),
+        "P90 Daily Total $":      round(p90_daily, 2),
+        # Annual
+        "Annual Energy $":        round(ann_energy, 0),
+        "Annual Demand $":        round(ann_demand, 0),
+        "Annual O&M $":           round(ann_maint + ann_warr, 0),
+        "Annual Capex Amort $":   round(ann_hardware_amort + ann_infra_amort, 0),
+        "Annual Total $":         round(ann_total, 0),
+        # 10-year
+        "10yr Energy $":          round(energy_10yr, 0),
+        "10yr Demand $":          round(demand_10yr, 0),
+        "10yr O&M $":             round(om_10yr, 0),
+        "10yr Capital $":         round(capital_10yr, 0),
+        "10yr Total $":           round(total_10yr, 0),
+    })
+
+    print(f"\n  {label}  ({n} units, {utility})")
+    print(f"  {'─'*60}")
+    print(f"  Capital (one-time):        ${capital_10yr:>12,.0f}   "
+          f"(hardware ${n*PURCHASE:,.0f} + infra ${infra_total:,.0f})")
+    print(f"  Annual energy cost:        ${ann_energy:>12,.0f}")
+    print(f"  Annual demand charges:     ${ann_demand:>12,.0f}")
+    print(f"  Annual O&M + warranty:     ${ann_maint+ann_warr:>12,.0f}   "
+          f"({n} units × ${ANN_MAINT+ANN_WARR:,.0f}/unit/yr)")
+    print(f"  Annual total (ops only):   ${ann_total:>12,.0f}")
+    print(f"  {'─'*60}")
+    print(f"  10-year energy:            ${energy_10yr:>12,.0f}")
+    print(f"  10-year demand:            ${demand_10yr:>12,.0f}")
+    print(f"  10-year O&M + warranty:    ${om_10yr:>12,.0f}")
+    print(f"  10-year capital:           ${capital_10yr:>12,.0f}")
+    print(f"  TOTAL 10-YEAR LIFECYCLE:   ${total_10yr:>12,.0f}")
+    print(f"  {'─'*60}")
+    print(f"  Avg daily operating cost:  ${avg_daily_total:>12,.2f}")
+    print(f"  P90 daily operating cost:  ${p90_daily:>12,.2f}")
+
+rpt_df = pd.DataFrame(report_rows)
+rpt_path = OUT_DIR / "XOS_10yr_Cost_Report.csv"
+rpt_df.to_csv(rpt_path, index=False)
+print(f"\n  10-year cost report saved: {rpt_path}")
+
+# Add to Excel
+with pd.ExcelWriter(OUT_DIR / "XOS_Sizing_Results.xlsx", engine="openpyxl",
+                    mode="a", if_sheet_exists="replace") as xl:
+    rpt_df.to_excel(xl, sheet_name="10yr_Cost_Report", index=False)

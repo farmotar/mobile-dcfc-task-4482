@@ -39,6 +39,13 @@ a_v, d_v : arrival and departure timestamps of vehicle v
   ports are simultaneously in use on the same unit.  Grid charging is suspended
   while any port on the unit is dispensing (no simultaneous charge+discharge).
 
+Single-unit assignment constraint (updated Jun 30 2026):
+  Once a vehicle event v is assigned to unit k at its first active timestep,
+  it draws all energy exclusively from unit k for its entire dwell window.
+  It cannot switch units mid-charge (physically impossible with CCS1).
+  If unit k is depleted or all 4 ports on unit k are already busy this step,
+  vehicle v waits until the next 15-min step.
+
 State variable
 --------------
 SoC_k[t] ∈ [SoC_min, SoC_max] : battery state of charge of unit k at step t
@@ -292,6 +299,9 @@ def simulate_one_day(
     peak_dispatch_kw = 0.0
     peak_grid_kw     = 0.0
 
+    # ── Single-unit assignment: locked on first active step, never changes ──
+    ev_unit_assignment: Dict[str, int] = {}
+
     # ── Step loop ───────────────────────────────────────────────────────────
     for ti, t in enumerate(time_steps):
         t_next = t + pd.Timedelta(hours=DT_H)
@@ -320,18 +330,26 @@ def simulate_one_day(
         step_dispatch_kw = 0.0
 
         for _, v in active:
-            # Find units that still have at least one free port
-            candidates = [k for k in range(n_units) if ports_left[k] > 0]
-            if not candidates:
-                break
-
-            # Highest-SOC unit with a free port
-            k = max(candidates, key=lambda i: soc[i])
+            # ── Determine which unit serves this vehicle ─────────────────────
+            if v in ev_unit_assignment:
+                # Already assigned — must stay on same unit (CCS1 physical constraint)
+                k = ev_unit_assignment[v]
+                if ports_left[k] == 0:
+                    # All 4 ports on assigned unit are busy this step; vehicle waits
+                    continue
+            else:
+                # First active step for this vehicle: pick best available unit
+                candidates = [i for i in range(n_units) if ports_left[i] > 0]
+                if not candidates:
+                    break
+                # Assign to unit with highest SoC (most energy available)
+                k = max(candidates, key=lambda i: soc[i])
+                ev_unit_assignment[v] = k
 
             usable_to_vehicle = (soc[k] - SOC_MIN) * B_KWH * ETA_D   # kWh at vehicle
 
             if usable_to_vehicle < ENERGY_TOL:
-                ports_left[k] = 0   # unit exhausted — close all remaining ports
+                # Assigned unit is depleted; vehicle waits this step
                 continue
 
             pv = p_eff[v]
