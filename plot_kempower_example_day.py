@@ -243,7 +243,9 @@ def make_figures(site: str, date_str: str) -> None:
     mix_str = " + ".join(
         f"{int(r['count'])}×{r['charger_type'].replace('Kempower_','')}"
         for _, r in mix_df.iterrows() if int(r["count"]) > 0)
-    e_del   = float(event_df["delivered_energy_kwh"].sum())
+    # Cap delivered at required (MILP time-step discretization can over-shoot by a few kWh)
+    event_df["delivered_capped_kwh"] = event_df[["delivered_energy_kwh","required_energy_kwh"]].min(axis=1)
+    e_del   = float(event_df["delivered_capped_kwh"].sum())
     e_unmet = float(event_df["unmet_energy_kwh"].sum())
 
     print(f"  {site} {date_str}: {len(event_ids)} vehicles, "
@@ -505,7 +507,8 @@ def make_figures(site: str, date_str: str) -> None:
         if ev_row.empty: continue
         r     = ev_row.iloc[0]
         need  = float(r.get("required_energy_kwh", 0) or 0)
-        delv  = float(r.get("delivered_energy_kwh", 0) or 0)
+        # Cap at required: MILP 15-min time steps can over-deliver by up to one step's worth
+        delv  = min(float(r.get("delivered_energy_kwh", 0) or 0), need)
         unmet = float(r.get("unmet_energy_kwh", 0) or 0)
         arr   = _to_pac(r["arrival_time"])
         dep   = _to_pac(r["departure_time"])
@@ -577,7 +580,7 @@ def make_figures(site: str, date_str: str) -> None:
         elif is_part:
             tag, tc = "PARTIAL *", C["partial"]
         else:
-            tag, tc = "FULL", C["full"]
+            tag, tc = "FULL ✓", C["full"]
         ax.text(r["need"] + max_need*0.01, y,
                 f"{r['delv']:.0f} / {r['need']:.0f} kWh  [{tag}]",
                 ha="left", va="center", fontsize=8, color=tc, fontweight="bold")
@@ -595,7 +598,8 @@ def make_figures(site: str, date_str: str) -> None:
         mpatches.Patch(fc="#f5c6a0", hatch="///", ec="#bbb",
                        label="Unmet energy gap (partial service)"),
     ], loc="lower right", fontsize=9, framealpha=0.95, edgecolor="#ccc")
-    ax.text(0.68, 0.97, "* = partial: vehicle energy need exceeds what was delivered",
+    ax.text(0.68, 0.97,
+        "* = partial: delivered < required  |  bars capped at required (100% SoC limit)",
         transform=ax.transAxes, fontsize=8, color=C["partial"], va="top")
 
     cost_line = (f"Cost:  CapEx ${capex_daily:.0f}/day  +  "
