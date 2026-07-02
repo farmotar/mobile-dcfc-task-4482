@@ -40,11 +40,15 @@ xos = importlib.import_module("xos_hub_soc_simulation")
 
 # ── Site metadata ──────────────────────────────────────────────────────────────
 SITE_META = {
-    "northgate": {"label": "Northgate Maintenance Station", "utility": "SMUD"},
-    "fresno":    {"label": "Fresno Maintenance Station",    "utility": "PG&E BEV-2"},
-    "glendale":  {"label": "Glendale Maintenance Station",  "utility": "PG&E BEV-2 (proxy)"},
-    "san_diego": {"label": "San Diego Maintenance Station", "utility": "SDG&E EV-HP"},
+    "northgate":     {"label": "Northgate Maintenance Station", "utility": "SMUD"},
+    "fresno":        {"label": "Fresno Maintenance Station",    "utility": "PG&E BEV-2"},
+    "glendale":      {"label": "Glendale Maintenance Station",  "utility": "PG&E BEV-2 (proxy)"},
+    "glendale_smud": {"label": "Glendale Maintenance Station",  "utility": "SMUD (proxy)"},
+    "san_diego":     {"label": "San Diego Maintenance Station", "utility": "SDG&E EV-HP"},
 }
+
+# Sites that share vehicle event CSVs with another site key
+CSV_SITE = {"glendale_smud": "glendale"}
 
 # ── Colors ─────────────────────────────────────────────────────────────────────
 C = dict(
@@ -119,8 +123,9 @@ def make_figures(site: str, date_str: str):
     utility    = meta["utility"]
     date_tag   = date_str.replace("-", "_")
 
-    # Load events
-    csv_path = EVENTS_DIR / f"z2z_milp_events_{site}_{date_tag}.csv"
+    # Load events (some sites share CSVs with another site key)
+    csv_site = CSV_SITE.get(site, site)
+    csv_path = EVENTS_DIR / f"z2z_milp_events_{csv_site}_{date_tag}.csv"
     if not csv_path.exists():
         print(f"  [SKIP] CSV not found: {csv_path.name}")
         return
@@ -634,7 +639,7 @@ def make_figures(site: str, date_str: str):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--site", required=True, choices=list(SITE_META),
-                        help="Site slug: northgate | fresno | glendale | san_diego")
+                        help="Site slug: northgate | fresno | glendale | glendale_smud | san_diego")
     parser.add_argument("--date", required=True,
                         help="Date string YYYY-MM-DD")
     args = parser.parse_args()

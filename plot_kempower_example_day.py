@@ -43,10 +43,11 @@ UTC = pytz.utc
 
 # ── Site metadata ──────────────────────────────────────────────────────────────
 SITE_META = {
-    "northgate": {"label": "Northgate Maintenance Station", "utility": "SMUD"},
-    "fresno":    {"label": "Fresno Maintenance Station",    "utility": "PG&E BEV-2"},
-    "glendale":  {"label": "Glendale Maintenance Station",  "utility": "PG&E BEV-2 (proxy)"},
-    "san_diego": {"label": "San Diego Maintenance Station", "utility": "SDG&E EV-HP"},
+    "northgate":    {"label": "Northgate Maintenance Station", "utility": "SMUD"},
+    "fresno":       {"label": "Fresno Maintenance Station",    "utility": "PG&E BEV-2"},
+    "glendale":     {"label": "Glendale Maintenance Station",  "utility": "PG&E BEV-2 (proxy)"},
+    "glendale_smud":{"label": "Glendale Maintenance Station",  "utility": "SMUD (proxy)"},
+    "san_diego":    {"label": "San Diego Maintenance Station", "utility": "SDG&E EV-HP"},
 }
 
 # ── Kempower charger type colors / ordering ────────────────────────────────────
