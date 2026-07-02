@@ -1,0 +1,30 @@
+site,site_label,technology,n_days,mean_cost_day,p90_cost_day,mean_lcod_kwh,p90_lcod_kwh,mean_demand_day
+northgate,Northgate,Fixed DCFC,310,10195.46,16890.84,5.78147,8.85289,9450.75
+northgate,Northgate,XOS Hub MC02,310,733.47,1242.02,0.39464,0.53156,123.2
+northgate,Northgate,Kempower,306,636.24,951.87,0.30754,0.45041,142.29
+northgate,Northgate,Diesel (Diesel_50kW),310,1428.74,2271.91,0.6255,0.67707,0.0
+northgate,Northgate,Diesel (Diesel_150kW),310,1477.26,2320.43,0.68398,0.81222,0.0
+northgate,Northgate,Diesel (Diesel_250kW),310,1528.11,2371.28,0.74526,0.95388,0.0
+fresno,Fresno,Fixed DCFC,313,1464.55,2515.27,1.62234,2.38563,1008.08
+fresno,Fresno,XOS Hub MC02,313,415.99,701.43,0.66739,1.30905,10.15
+fresno,Fresno,Kempower,313,322.59,540.26,0.38592,0.63259,24.74
+fresno,Fresno,Diesel (Diesel_50kW),313,646.6,1133.02,0.68932,0.83566,0.0
+fresno,Fresno,Diesel (Diesel_150kW),313,695.12,1181.55,0.84268,1.20669,0.0
+fresno,Fresno,Diesel (Diesel_250kW),313,745.97,1232.4,1.0034,1.59547,0.0
+glendale,Glendale (PG&E proxy),Fixed DCFC,255,1146.26,1730.38,2.80998,5.81936,871.81
+glendale,Glendale (PG&E proxy),XOS Hub MC02,255,198.04,309.97,0.47591,0.93344,5.97
+glendale,Glendale (PG&E proxy),Kempower,255,195.47,303.06,0.39877,0.58791,19.78
+glendale,Glendale (PG&E proxy),Diesel (Diesel_50kW),255,342.35,574.36,0.67993,0.81213,0.0
+glendale,Glendale (PG&E proxy),Diesel (Diesel_150kW),255,390.87,622.88,0.81934,1.14816,0.0
+glendale,Glendale (PG&E proxy),Diesel (Diesel_250kW),255,441.72,673.74,0.96543,1.50028,0.0
+san_diego,San Diego,Fixed DCFC,337,10626.32,16748.31,2.89988,5.73934,8721.73
+san_diego,San Diego,XOS Hub MC02,339,1180.58,2617.64,0.31064,0.61391,59.03
+san_diego,San Diego,Diesel (Diesel_50kW),339,3734.84,5891.74,0.62404,0.71752,0.0
+san_diego,San Diego,Diesel (Diesel_150kW),339,3783.36,5940.26,0.68033,0.91279,0.0
+san_diego,San Diego,Diesel (Diesel_250kW),339,3834.21,5991.11,0.73932,1.11745,0.0
+glendale_smud,Glendale (SMUD proxy),Fixed DCFC,255,3299.46,4924.39,8.23799,17.25453,3053.57
+glendale_smud,Glendale (SMUD proxy),XOS Hub MC02,255,205.6,334.08,0.50464,1.03559,29.97
+glendale_smud,Glendale (SMUD proxy),Kempower,239,217.76,325.8,0.44941,0.7412,65.06
+glendale_smud,Glendale (SMUD proxy),Diesel (Diesel_50kW),255,342.35,574.36,0.67993,0.81213,0.0
+glendale_smud,Glendale (SMUD proxy),Diesel (Diesel_150kW),255,390.87,622.88,0.81934,1.14816,0.0
+glendale_smud,Glendale (SMUD proxy),Diesel (Diesel_250kW),255,441.72,673.74,0.96543,1.50028,0.0
