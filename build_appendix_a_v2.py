@@ -192,8 +192,8 @@ def fig_xos_daily(sk, path):
     ax.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
     plt.setp(ax.get_xticklabels(),rotation=35,ha="right",fontsize=8)
     ax.yaxis.set_major_formatter(mticker.FuncFormatter(lambda v,_:f"${v:,.0f}"))
-    ax.set_ylabel("Total daily cost — Scenario A ($/day)",fontsize=9)
-    ax.set_title(f"XOS Hub MC02 — {d['label']}: Daily Cost, Scenario A  ({UTILITY_SHORT[sk]})",
+    ax.set_ylabel("Total daily cost ($/day)",fontsize=9)
+    ax.set_title(f"XOS Hub MC02 — {d['label']}: Daily Cost  ({UTILITY_SHORT[sk]})",
                  fontsize=10,fontweight="bold")
     ax.legend(fontsize=8.5,loc="upper left",framealpha=0.92)
     ax.grid(axis="y",linestyle=":",alpha=0.35)
@@ -406,9 +406,9 @@ doc.add_page_break()
 h1(doc,"A.1  Overview and Scope")
 body(doc,
     "This appendix presents the cost model developed for Task 4482 to evaluate two "
-    "DC fast charging deployment scenarios at four Caltrans maintenance stations. "
-    "Results are organized in two parts: Part I covers the XOS Hub MC02 mobile DCFC "
-    "(Scenario A — always grid-connected); Part II covers the Kempower fixed DCFC "
+    "DC fast charging deployment options at four Caltrans maintenance stations. "
+    "Results are organized in two parts: Part I covers the XOS Hub MC02 mobile DCFC; "
+    "Part II covers the Kempower fixed DCFC "
     "(optimal charger mix selected by MILP). All costs use a 10-year asset lifespan "
     "and include capital amortization, TOU energy charges, utility demand/subscription "
     "charges, and warranty and maintenance (the latter two flagged as assumed values "
@@ -489,7 +489,7 @@ doc.add_page_break()
 # ══════════════════════════════════════════════════════════════════════
 # PART I — XOS HUB MC02
 # ══════════════════════════════════════════════════════════════════════
-divider(doc,"PART I — XOS HUB MC02 (Scenario A: Always Grid-Connected)")
+divider(doc,"PART I — XOS HUB MC02 (Mobile DC Fast Charging)")
 
 # ── A.3 XOS Specs ─────────────────────────────────────────────────────
 h1(doc,"A.3  XOS Hub MC02 — Hardware Specifications and Cost Assumptions")
@@ -519,8 +519,8 @@ add_table(doc,
 body(doc,"* Assumed values — must be confirmed with XOS before report finalization (see §A.14).")
 
 # ── A.4 XOS Sizing Methodology ─────────────────────────────────────────
-h1(doc,"A.4  XOS Hub MC02 — Sizing Methodology (Scenario A)")
-h2(doc,"A.4.1  Scenario A — Operating Logic")
+h1(doc,"A.4  XOS Hub MC02 — Sizing Methodology")
+h2(doc,"A.4.1  Operating Logic")
 body(doc,"Each XOS Hub unit remains connected to the 480V, 3-phase grid throughout the operating day. "
      "Grid power continuously replenishes the battery at up to 83 kW per unit. The battery acts as "
      "an energy buffer: vehicles draw from the battery while the grid recharges it simultaneously. "
@@ -547,7 +547,7 @@ add_table(doc,
     col_widths=[1.8,2.8,1.8])
 
 # ── A.5 XOS Per-Site Results ───────────────────────────────────────────
-h1(doc,"A.5  XOS Hub MC02 — Per-Site Results (Scenario A)")
+h1(doc,"A.5  XOS Hub MC02 — Per-Site Results")
 fig_n=1
 for sk,sl in SITES:
     d=XD[sk]; pday=d["pday"]; nomK=d["nomK"]; up=d["upfront"]
@@ -596,7 +596,7 @@ for sk,sl in SITES:
         col_widths=[3.2,2.5])
 
     add_fig(doc,str(FIGS/f"xos_{sk}_daily.png"),
-            f"Figure A.{fig_n}. {sl} — XOS Scenario A Daily Cost Distribution with 90th-Percentile Line.",width=6.2)
+            f"Figure A.{fig_n}. {sl} — XOS Hub MC02 Daily Cost Distribution with 90th-Percentile Line.",width=6.2)
     fig_n+=1
     add_fig(doc,str(FIGS/f"xos_{sk}_breakdown.png"),
             f"Figure A.{fig_n}. {sl} — XOS Cost Breakdown at Nominal Design Day (K = {nomK}).",width=5.5)
@@ -780,7 +780,7 @@ xos_n=XD["northgate"]; kmp_n=KD["northgate"]
 kmp_annual=kmp_n["summ"]["total_allin"].mean()*365 if kmp_n else None
 xos_annual=xos_n["dc"]["total_allin"].sum()*365/xos_n["days"]
 add_table(doc,
-    ["Metric","XOS Hub MC02 (Scenario A)","Kempower Fixed DCFC"],
+    ["Metric","XOS Hub MC02","Kempower Fixed DCFC"],
     [["Utility","SMUD C&I","SMUD C&I"],
      ["Nominal design K / mix",f"{xos_n['nomK']} XOS units",str(kmp_n["pday"]["mix"]) if kmp_n else "—"],
      ["90th-pct daily cost",fmt(xos_n["p90"],2)+"/day",fmt(kmp_n["p90"],2)+"/day" if kmp_n else "—"],
@@ -948,7 +948,7 @@ add_table(doc,
     col_widths=[2.0,4.4])
 
 # ── A.15 Worst-Day Tables ──────────────────────────────────────────────
-h1(doc,"A.15  Worst-Day Supporting Tables (Scenario A — XOS)")
+h1(doc,"A.15  Worst-Day Supporting Tables (XOS Hub MC02)")
 add_table(doc,
     ["Site","Date","K","Total Daily Cost","Energy","Demand-Global","Demand-PkWin","Peak kW"],
     [[sl,

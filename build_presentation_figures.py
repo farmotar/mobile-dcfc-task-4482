@@ -134,7 +134,7 @@ for sk,sl in SITES:
 ax.axhline(100, color="#aaa", linestyle="--", linewidth=1, alpha=0.6)
 ax.set_xlabel("Number of XOS Hub MC02 Units (K)", fontsize=10)
 ax.set_ylabel("Days 100% Fully Served (%)", fontsize=10)
-ax.set_title("Coverage Curves — K-Sweep\n% of Operating Days Fully Served vs. Hub Count  (Scenario A — always grid-connected)",
+ax.set_title("Coverage Curves — K-Sweep\n% of Operating Days Fully Served vs. XOS Hub Count",
              fontsize=11, fontweight="bold")
 ax.set_xlim(0.5, 20.5); ax.set_ylim(0,105)
 ax.set_xticks(K_range)
@@ -145,7 +145,7 @@ ax.text(0.5, 0.35, "Plateau = dwell-window ceiling:\nvehicles cannot be fully ch
         bbox=dict(boxstyle="round,pad=0.3",facecolor="#f5f5f5",edgecolor="#bbb"))
 fig.tight_layout()
 savefig("P01_xos_coverage_curves.png",
-    "Figure P.1. XOS Hub MC02 — K-Sweep Coverage Curves, All Sites (Scenario A). "
+    "Figure P.1. XOS Hub MC02 — K-Sweep Coverage Curves, All Sites. "
     "Each curve shows the fraction of operating days that a fixed K-unit deployment can "
     "fully serve all arriving vehicles within their dwell windows. The plateau represents "
     "the dwell-window ceiling: once K is sufficient to meet power demand, additional units "
@@ -194,11 +194,11 @@ for i,(sk,sl) in enumerate(site_order):
                   Patch(color=COLORS[sk],alpha=0.20,label="Grid kWh/day")]
     ax.legend(handles=legend_els, fontsize=7, loc="upper right", framealpha=0.85)
 
-fig.suptitle("XOS Hub MC02 — Annual Grid Power Draw and Daily Energy Profile\n(Scenario A, May 2025 – Apr 2026)",
+fig.suptitle("XOS Hub MC02 — Annual Grid Power Draw and Daily Energy Profile\n(May 2025 – Apr 2026)",
              fontsize=12, fontweight="bold", y=1.01)
 fig.tight_layout()
 savefig("P02_xos_grid_profile_4panel.png",
-    "Figure P.2. XOS Hub MC02 — Annual Grid Power Draw and Energy Profile, All Sites (Scenario A). "
+    "Figure P.2. XOS Hub MC02 — Annual Grid Power Draw and Energy Profile, All Sites. "
     "Line: daily peak grid draw (kW, left axis). Light bars: total grid kWh drawn per day. "
     "Dark bars: energy delivered to vehicles per day (right axis). Dashed line: annual mean "
     "peak grid draw. San Diego exhibits the highest sustained grid demand (>1,000 kW average) "
@@ -232,11 +232,11 @@ for i,(sk,sl) in enumerate(site_order):
     ax.set_xlabel("Month", fontsize=8)
     plt.colorbar(im, ax=ax, fraction=0.04, label="Days")
 
-fig.suptitle("XOS Hub MC02 — Monthly Distribution of Daily Hub Count (K)\n(Scenario A — each cell = number of days requiring that K in that month)",
+fig.suptitle("XOS Hub MC02 — Monthly Distribution of Daily Hub Count (K)\n(each cell = number of days requiring that K in that month)",
              fontsize=11, fontweight="bold")
 fig.tight_layout()
 savefig("P03_xos_monthly_k_heatmap.png",
-    "Figure P.3. XOS Hub MC02 — Monthly Heat Map of Required Daily Hub Count (K), All Sites (Scenario A). "
+    "Figure P.3. XOS Hub MC02 — Monthly Heat Map of Required Daily Hub Count (K), All Sites. "
     "Each cell shows how many operating days in a given month required exactly K units. "
     "Darker (red) cells indicate more frequent occurrence. San Diego's column is uniformly dark "
     "at K=15–20, confirming consistently high demand year-round. Glendale's distribution is "
@@ -265,18 +265,18 @@ for i,(sk,sl) in enumerate(site_order):
     ax.bar(x+w/2, top10["n_fully_served"],   width=w, color="#4dac26", alpha=0.8, label="Fully served")
     ax.set_xticks(x); ax.set_xticklabels(ranks, fontsize=7.5)
     ax.set_ylabel("Vehicles", fontsize=9)
-    ax.set_title(f"{sl} ({UTIL[sk]}) — Top-10 Worst Days by Vehicle Count\n(Scenario A — coverage at each day's K shown)", fontsize=9.5, fontweight="bold", color=COLORS[sk])
+    ax.set_title(f"{sl} ({UTIL[sk]}) — Top-10 Worst Days by Vehicle Count\n(coverage at each day's K shown)", fontsize=9.5, fontweight="bold", color=COLORS[sk])
     ax.legend(fontsize=8.5); ax.grid(axis="y", linestyle=":", alpha=0.4)
     for j,row in top10.iterrows():
         ax.text(j, max(row.n_vehicles, row.n_fully_served)+0.4,
                 f"{row.coverage:.0f}%", ha="center", va="bottom",
                 fontsize=6.5, color="#555", style="italic")
 
-fig.suptitle("XOS Hub MC02 — Top-10 Highest-Demand Days per Site (Scenario A)\nBar pairs: total vehicles vs. fully served  |  % label = fraction of all days that day's K covers",
+fig.suptitle("XOS Hub MC02 — Top-10 Highest-Demand Days per Site\nBar pairs: total vehicles vs. fully served  |  % label = fraction of all days that day's K covers",
              fontsize=11, fontweight="bold")
 fig.tight_layout()
 savefig("P04_xos_worst_days_4panel.png",
-    "Figure P.4. XOS Hub MC02 — Top-10 Highest-Demand Days per Site (Scenario A, sorted by vehicle count). "
+    "Figure P.4. XOS Hub MC02 — Top-10 Highest-Demand Days per Site (sorted by vehicle count). "
     "Red bars: total vehicles arriving that day. Green bars: vehicles fully served. "
     "Italic percentage labels: fraction of all annual days that the K-value for that day would cover "
     "(Shima coverage). Note Northgate and San Diego show significant partially-served vehicles "
@@ -310,11 +310,11 @@ for i,(sk,sl) in enumerate(site_order):
     ax.set_xlabel("Worst-day rank (by vehicle count)", fontsize=8)
     ax.legend(fontsize=8); ax.grid(axis="y", linestyle=":", alpha=0.4)
 
-fig.suptitle("Shima Coverage Analysis — What K from Each Worst Day Covers Across All Operating Days\n(Scenario A — fixing K at each worst day's requirement, what fraction of days are also covered?)",
+fig.suptitle("Shima Coverage Analysis — What K from Each Worst Day Covers Across All Operating Days\n(fixing K at each worst day's requirement, what fraction of days are also covered?)",
              fontsize=11, fontweight="bold")
 fig.tight_layout()
 savefig("P05_xos_shima_coverage.png",
-    "Figure P.5. Shima Coverage Analysis — XOS Hub MC02, All Sites (Scenario A). "
+    "Figure P.5. Shima Coverage Analysis — XOS Hub MC02, All Sites. "
     "For each of the top-10 worst days (sorted by vehicle count), the bar shows what fraction "
     "of ALL operating days that day's K-value would also fully cover. The dashed line is the "
     "theoretical maximum (K-sweep ceiling), which cannot be exceeded due to dwell-window constraints. "
